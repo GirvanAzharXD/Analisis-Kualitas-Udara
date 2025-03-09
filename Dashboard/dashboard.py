@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load dataset
-guanyuan = pd.read_csv("PRSA_Data_Guanyuan_20130301-20170228.csv")
-shunyi = pd.read_csv("PRSA_Data_Shunyi_20130301-20170228.csv")
+guanyuan = pd.read_csv("Dashboard/PRSA_Data_Guanyuan_20130301-20170228.csv")
+shunyi = pd.read_csv("Dashboard/PRSA_Data_Shunyi_20130301-20170228.csv")
 
 # Data preparation
 guanyuan['datetime'] = pd.to_datetime(guanyuan[['year', 'month', 'day', 'hour']])
