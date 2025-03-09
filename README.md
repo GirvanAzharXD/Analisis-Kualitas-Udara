@@ -77,7 +77,7 @@ Submission
 
 | ├───PRSA_Data_Guanyuan_20130301-20170228.csv
 
-| ├───PRSA_Data_Shunyi_20130301-20170228.csv 
+| └───PRSA_Data_Shunyi_20130301-20170228.csv 
 
 | └───dashboard.py
 
