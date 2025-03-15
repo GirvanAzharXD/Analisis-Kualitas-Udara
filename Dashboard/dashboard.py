@@ -9,8 +9,8 @@ st.set_page_config(page_title="Analisis Kualitas Udara", layout="wide")
 # Fungsi untuk memuat data
 @st.cache_data
 def load_data():
-    guanyuan = pd.read_csv("data/PRSA_Data_Guanyuan_20130301-20170228.csv")
-    shunyi = pd.read_csv("data/PRSA_Data_Shunyi_20130301-20170228.csv")
+    guanyuan = pd.read_csv("Dashboard/data/PRSA_Data_Guanyuan_20130301-20170228.csv")
+    shunyi = pd.read_csv("Dashboard/data/PRSA_Data_Shunyi_20130301-20170228.csv")
     return guanyuan, shunyi
 
 # Memuat data
