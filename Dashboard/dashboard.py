@@ -3,96 +3,81 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Load dataset
-guanyuan = pd.read_csv("Dashboard/PRSA_Data_Guanyuan_20130301-20170228.csv")
-shunyi = pd.read_csv("Dashboard/PRSA_Data_Shunyi_20130301-20170228.csv")
-
-# Data preparation
-guanyuan['datetime'] = pd.to_datetime(guanyuan[['year', 'month', 'day', 'hour']])
-shunyi['datetime'] = pd.to_datetime(shunyi[['year', 'month', 'day', 'hour']])
-
-# Streamlit App
+# Harus di baris pertama setelah import
 st.set_page_config(page_title="Analisis Kualitas Udara", layout="wide")
 
-st.title("Dashboard Analisis Kualitas Udara PM2.5")
-st.write("""
-### Proyek Analisis Data - [Air Quality Dataset]
-**Nama:** [Mochamad Girvan Azhar]  
-**Email:** [girvanazhr@gmail.com]  
-**ID Dicoding:** [MC009D5Y0502]
-""")
+# Fungsi untuk memuat data
+@st.cache_data
+def load_data():
+    guanyuan = pd.read_csv("PRSA_Data_Guanyuan_20130301-20170228.csv")
+    shunyi = pd.read_csv("PRSA_Data_Shunyi_20130301-20170228.csv")
+    return guanyuan, shunyi
 
-# Sidebar
+# Memuat data
+guanyuan, shunyi = load_data()
+
+st.title("Analisis Data Kualitas Udara Beijing")
+
+# Sidebar untuk kontrol
 st.sidebar.header("Pengaturan Parameter")
-selected_year = st.sidebar.slider("Pilih Tahun", 2013, 2017, (2013, 2017))
+selected_location = st.sidebar.radio(
+    "Pilih Lokasi:",
+    ('Guanyuan', 'Shunyi')
+)
 
-# Fungsi untuk filter data
-def filter_data(df, years):
-    return df[(df['datetime'].dt.year >= years[0]) & (df['datetime'].dt.year <= years[1])]
+selected_year = st.sidebar.slider(
+    "Pilih Rentang Tahun:",
+    min_value=2013,
+    max_value=2017,
+    value=(2013, 2017)
+)
 
-# Tab untuk visualisasi
-tab1, tab2, tab3 = st.tabs(["Perbandingan Rata-rata", "Tren PM2.5", "Faktor Pengaruh"])
+# Pilih dataset berdasarkan lokasi
+data = guanyuan if selected_location == 'Guanyuan' else shunyi
 
-with tab1:
-    st.header("Perbandingan Rata-rata PM2.5")
-    
-    avg_pm25 = pd.DataFrame({
-        'Lokasi': ['Guanyuan', 'Shunyi'],
-        'PM2.5': [guanyuan['PM2.5'].mean(), shunyi['PM2.5'].mean()]
-    })
-    
-    fig, ax = plt.subplots(figsize=(6, 4))
-    sns.barplot(data=avg_pm25, x='Lokasi', y='PM2.5', palette='Blues')
-    plt.title("Perbandingan Rata-rata PM2.5")
-    st.pyplot(fig)
+# Preprocessing data
+data['date'] = pd.to_datetime(data[['year', 'month', 'day', 'hour']])
+data_filtered = data[(data['year'] >= selected_year[0]) & (data['year'] <= selected_year[1])]
 
-with tab2:
-    st.header("Tren Polusi PM2.5 Tahun ke Tahun")
-    
-    guan_filtered = filter_data(guanyuan, selected_year)
-    shun_filtered = filter_data(shunyi, selected_year)
-    
-    guan_monthly = guan_filtered.resample('M', on='datetime')['PM2.5'].mean().reset_index()
-    shun_monthly = shun_filtered.resample('M', on='datetime')['PM2.5'].mean().reset_index()
-    
-    fig, ax = plt.subplots(figsize=(10, 5))
-    sns.lineplot(data=guan_monthly, x='datetime', y='PM2.5', label='Guanyuan', marker='o')
-    sns.lineplot(data=shun_monthly, x='datetime', y='PM2.5', label='Shunyi', marker='o')
-    plt.title("Tren Rata-rata PM2.5 Bulanan")
-    plt.xlabel("Tahun")
-    plt.ylabel("Konsentrasi PM2.5 (µg/m³)")
-    plt.grid(True)
-    st.pyplot(fig)
+# Tampilkan data mentah
+if st.sidebar.checkbox('Tampilkan Data Mentah'):
+    st.subheader('Data Mentah')
+    st.write(data_filtered)
 
-with tab3:
-    st.header("Faktor yang Mempengaruhi PM2.5")
-    
-    selected_location = st.radio("Pilih Lokasi", ['Guanyuan', 'Shunyi'])
-    variables = ['TEMP', 'PRES', 'DEWP', 'RAIN', 'WSPM']
-    selected_var = st.selectbox("Pilih Variabel", variables)
-    
-    data = guanyuan if selected_location == 'Guanyuan' else shunyi
-    filtered_data = filter_data(data, selected_year)
-    
-    fig, ax = plt.subplots(figsize=(10, 5))
-    sns.scatterplot(data=filtered_data, x=selected_var, y='PM2.5', alpha=0.5)
-    plt.title(f'Hubungan {selected_var} dengan PM2.5 di {selected_location}')
-    plt.xlabel(selected_var)
-    plt.ylabel('Konsentrasi PM2.5 (µg/m³)')
-    st.pyplot(fig)
-    
-    corr = filtered_data[['PM2.5', selected_var]].corr().iloc[0,1]
-    st.metric(label="Koefisien Korelasi", value=f"{corr:.2f}")
+# Visualisasi 1: Tren PM2.5 Tahunan
+st.subheader(f'Tren PM2.5 Tahunan di {selected_location}')
+yearly_avg = data_filtered.groupby('year')['PM2.5'].mean().reset_index()
 
-st.sidebar.header("Statistik Deskriptif")
-if st.sidebar.checkbox("Tampilkan Statistik Deskriptif"):
-    st.subheader("Statistik Deskriptif PM2.5")
-    desc_stats = guanyuan['PM2.5'].describe()
-    st.write(desc_stats)
+plt.figure(figsize=(10, 6))
+sns.lineplot(x='year', y='PM2.5', data=yearly_avg, marker='o')
+plt.title('Rata-rata PM2.5 Tahunan')
+plt.xlabel('Tahun')
+plt.ylabel('PM2.5 (μg/m³)')
+plt.grid(True)
+st.pyplot(plt)
 
-st.markdown("""
-**Catatan:**
-- Data mencakup periode 2013-2017
-- Sumber data: Dataset Kualitas Udara Beijing
-- Missing values telah diatasi dengan median imputation
-""")
+# Visualisasi 2: Hubungan dengan Faktor Lain
+st.subheader('Hubungan PM2.5 dengan Faktor Lingkungan')
+selected_feature = st.selectbox(
+    'Pilih Faktor:',
+    ('TEMP', 'PRES', 'WSPM', 'DEWP')
+)
+
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=selected_feature, y='PM2.5', data=data_filtered, alpha=0.5)
+plt.title(f'PM2.5 vs {selected_feature}')
+plt.xlabel(selected_feature)
+plt.ylabel('PM2.5 (μg/m³)')
+st.pyplot(plt)
+
+# Tampilkan statistik deskriptif
+st.subheader('Statistik Deskriptif')
+st.write(data_filtered[['PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3', 'TEMP', 'PRES', 'DEWP', 'WSPM']].describe())
+
+# Analisis Korelasi
+st.subheader('Matriks Korelasi')
+corr_matrix = data_filtered[['PM2.5', 'PM10', 'SO2', 'NO2', 'CO', 'O3', 'TEMP', 'PRES', 'DEWP', 'WSPM']].corr()
+
+plt.figure(figsize=(12, 8))
+sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt=".2f")
+st.pyplot(plt)
