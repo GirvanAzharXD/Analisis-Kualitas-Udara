@@ -44,7 +44,7 @@ Variabel yang tersedia:
 ## Instalasi
 1. Clone repositori
 ```
-git clone https://github.com/username/air-quality-analysis.git
+git clone https://github.com/GirvanAzharXD/Analisis-Kualitas-Udara
 cd air-quality-analysis
 Install dependencies
 
